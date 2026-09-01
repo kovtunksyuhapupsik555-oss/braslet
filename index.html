@@ -197,8 +197,8 @@
   // Числовые Telegram ID тех, кому открыто приложение.
   // Узнать ID: открыть это приложение через бота — он покажется на экране «Доступ только для мастера».
   var ALLOWED_TELEGRAM_IDS = [
-    // 000000000, // Ксения
-    // 000000000  // Евгения
+    5156804687   // Ксения
+    // , 000000000  // Евгения — добавить, когда будет известен ID
   ];
   function currentTelegramId(){
     try{ return (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || null; }
