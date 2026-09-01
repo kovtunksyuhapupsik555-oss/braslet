@@ -133,6 +133,13 @@
 </style>
 </head>
 <body>
+<div class="wrap" id="lock" style="display:none">
+  <section class="card fallback">
+    <b>Доступ только для мастера</b>
+    <span>Открой приложение через своего Telegram-бота под нужным аккаунтом.</span>
+    <span id="lockId" style="display:block;margin-top:12px;font-size:12px;opacity:.7"></span>
+  </section>
+</div>
 <div class="wrap" id="app">
   <header class="top">
     <div class="avatar" id="av">Б</div>
@@ -185,6 +192,32 @@
 (function(){
   var tg = window.Telegram && window.Telegram.WebApp;
   if(tg){ try{ tg.ready(); tg.expand(); }catch(e){} }
+
+  // ---------- доступ: только для мастера и Евгении ----------
+  // Числовые Telegram ID тех, кому открыто приложение.
+  // Узнать ID: открыть это приложение через бота — он покажется на экране «Доступ только для мастера».
+  var ALLOWED_TELEGRAM_IDS = [
+    // 000000000, // Ксения
+    // 000000000  // Евгения
+  ];
+  function currentTelegramId(){
+    try{ return (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || null; }
+    catch(e){ return null; }
+  }
+  function accessGranted(){
+    var id = currentTelegramId();
+    return !!id && ALLOWED_TELEGRAM_IDS.indexOf(id) >= 0;
+  }
+  if(!accessGranted()){
+    var uid = currentTelegramId();
+    document.getElementById('app').style.display = 'none';
+    var lock = document.getElementById('lock');
+    lock.style.display = 'block';
+    document.getElementById('lockId').textContent =
+      uid ? ('Твой Telegram ID: ' + uid + ' — пришли его мастеру, чтобы открыть доступ')
+          : 'Приложение открыто не из Telegram';
+    return;
+  }
 
   var LS_KEY = 'braslet_orders_v1';
   var DATA = null;
