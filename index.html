@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Браслет намерения</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg:#eaefe1; --bg2:#e3ebd8;
+    --card:rgba(253,254,249,.74); --card-solid:#fcfdf7;
+    --ink:#2c352a; --ink-soft:#788472; --line:rgba(70,100,55,.16);
+    --peach:#aac6a0; --terra:#6f9463; --accent:#3f7d54; --accent-soft:#e5efe1;
+    --shadow:0 14px 34px rgba(70,100,54,.16);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 500px at 15% -10%, #f2f6ea, transparent),
+      radial-gradient(900px 500px at 110% 10%, #deead2, transparent),
+      var(--bg);
+    min-height:100vh; padding:16px 14px 40px; line-height:1.45;
+  }
+  .wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+  .card{
+    background:var(--card); backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--line); border-radius:24px;
+    padding:18px; box-shadow:var(--shadow);
+  }
+  header.top{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 16px;border-radius:22px;
+    background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);
+  }
+  .avatar{
+    width:42px;height:42px;border-radius:50%;flex:none;
+    background:linear-gradient(135deg,var(--peach),var(--accent));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+  }
+  header .hi{font-size:13px;color:var(--ink-soft)}
+  header .hi b{display:block;font-size:16px;color:var(--ink);font-weight:650}
+  .pill{margin-left:auto;font-size:12px;color:var(--accent);background:var(--accent-soft);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px;
+    white-space:nowrap;align-self:flex-start}
+
+  h2.sec{font-size:13px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-soft);margin-bottom:12px;font-weight:650}
+
+  label.f{display:block;font-size:13px;color:var(--ink-soft);margin:10px 0 6px}
+  input[type=text],input[type=date],textarea{
+    width:100%;font:inherit;color:var(--ink);
+    background:var(--card-solid);border:1px solid var(--line);
+    border-radius:14px;padding:12px 14px;outline:none;
+  }
+  input:focus,textarea:focus{border-color:var(--accent)}
+  textarea{resize:vertical;min-height:110px;line-height:1.5}
+  .hint{font-size:11.5px;color:var(--ink-soft);margin-top:6px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .chip{font-size:12.5px;padding:7px 12px;border-radius:999px;cursor:pointer;
+    background:#fff;border:1px solid var(--line);color:var(--ink-soft)}
+  .chip:active{transform:scale(.97)}
+
+  button.go{
+    width:100%;margin-top:16px;font:inherit;font-weight:700;font-size:16px;
+    color:#fff;border:none;border-radius:16px;padding:15px;cursor:pointer;
+    background:linear-gradient(135deg,var(--terra),var(--accent));
+    box-shadow:0 12px 24px rgba(138,107,196,.3);
+  }
+  button.go:active{transform:translateY(1px)}
+
+  #results{display:none;flex-direction:column;gap:14px}
+
+  .ring-wrap{display:flex;justify-content:center;padding:6px 0 2px}
+  svg.ring{width:230px;height:230px}
+  .ring-cap{text-align:center;font-size:12.5px;color:var(--ink-soft);margin-top:2px}
+
+  ol.stones{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .stone{display:flex;gap:12px;align-items:flex-start;
+    background:var(--card-solid);border:1px solid var(--line);
+    border-radius:16px;padding:12px}
+  .bead{width:30px;height:30px;border-radius:50%;flex:none;margin-top:2px;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.35), 0 2px 6px rgba(0,0,0,.15);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+  .stone .nm{font-weight:650;font-size:15px}
+  .stone .tag{font-size:11.5px;color:var(--accent);margin-top:3px;font-weight:600}
+  .stone .ds{font-size:12.5px;color:var(--ink-soft);margin-top:5px;line-height:1.5}
+  .stone .amp{display:inline-block;margin-top:6px;font-size:11.5px;color:var(--accent);
+    background:var(--accent-soft);border-radius:999px;padding:3px 9px}
+
+  .num-grid{display:flex;flex-direction:column;gap:10px}
+  .num-row{background:var(--card-solid);border:1px solid var(--line);
+    border-radius:14px;padding:12px}
+  .num-row .k{font-size:12px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em}
+  .num-row .v{font-size:20px;font-weight:700;margin:3px 0}
+  .num-row .m{font-size:12.5px;color:var(--ink-soft)}
+  .num-note{font-size:11.5px;color:var(--ink-soft);margin-bottom:10px;line-height:1.5}
+  .num-row .calc{font-size:11.5px;color:var(--terra);margin-top:6px;
+    font-variant-numeric:tabular-nums;white-space:pre-line;line-height:1.6}
+
+  .bd-group{background:var(--card-solid);border:1px solid var(--line);
+    border-radius:14px;padding:12px 13px;margin-bottom:10px}
+  .bd-group .bh{font-size:13px;font-weight:650;margin-bottom:2px}
+  .bd-group .bsub{font-size:11.5px;color:var(--ink-soft);margin-bottom:8px}
+  .bd-stone{display:flex;gap:10px;align-items:flex-start;padding:6px 0;
+    border-top:1px solid var(--line)}
+  .bd-stone:first-of-type{border-top:none}
+  .bd-dot{width:14px;height:14px;border-radius:50%;flex:none;margin-top:3px;
+    box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.4)}
+  .bd-stone .bn{font-size:13px;font-weight:600}
+  .bd-stone .bm{font-size:12px;color:var(--ink-soft)}
+
+  .hist{display:flex;flex-direction:column;gap:9px}
+  .hrow{display:flex;align-items:center;gap:10px;cursor:pointer;
+    background:var(--card-solid);border:1px solid var(--line);
+    border-radius:14px;padding:11px 13px}
+  .hrow:active{transform:scale(.99)}
+  .hdot{width:10px;height:10px;border-radius:50%;background:var(--terra);flex:none}
+  .hrow .ht{font-size:14px;font-weight:600}
+  .hrow .hs{font-size:12px;color:var(--ink-soft)}
+  .hrow .hd{margin-left:auto;font-size:11.5px;color:var(--ink-soft)}
+  .empty{font-size:13px;color:var(--ink-soft);text-align:center;padding:10px}
+
+  .fallback{text-align:center;padding:26px 18px}
+  .fallback b{display:block;font-size:16px;margin-bottom:6px}
+  .fallback span{font-size:13px;color:var(--ink-soft)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="top">
+    <div class="avatar" id="av">Б</div>
+    <div class="hi"><b id="masterName">Браслет намерения</b>подбор камней по таронумерологии</div>
+    <div class="pill">новый браслет</div>
+  </header>
+
+  <section class="card" id="formCard">
+    <h2 class="sec">Данные заказчика</h2>
+    <label class="f">Имя</label>
+    <input type="text" id="firstName" placeholder="Светлана" autocomplete="off">
+    <label class="f">Фамилия</label>
+    <input type="text" id="lastName" placeholder="Фонина" autocomplete="off">
+    <label class="f">Дата рождения</label>
+    <input type="date" id="birthDate" value="1990-03-17">
+    <label class="f">Намерение</label>
+    <textarea id="intention" rows="4" placeholder="Опиши цель заказчика своими словами — можно несколько предложений. Например: хочу чувствовать опору и уверенность на новой работе, защититься от чужого давления."></textarea>
+    <div class="hint">Можно писать развёрнуто — несколько предложений. Ключевые слова из текста влияют на подбор аркана и камней.</div>
+    <div class="chips" id="chips"></div>
+    <div id="formErr" style="display:none;margin-top:12px;font-size:12.5px;color:#b4472f;background:#fbe4dc;border:1px solid var(--line);border-radius:12px;padding:10px 13px"></div>
+    <button class="go" id="goBtn">Подобрать камни</button>
+  </section>
+
+  <div id="results">
+    <section class="card">
+      <h2 class="sec">Браслет · порядок нанизывания</h2>
+      <div class="ring-wrap"><svg class="ring" id="ring" viewBox="0 0 240 240"></svg></div>
+      <div class="ring-cap">Браслет на резинке — кольцо замкнуто: последний камень соединяется с первым</div>
+      <ol class="stones" id="stoneList"></ol>
+    </section>
+
+    <section class="card">
+      <h2 class="sec">Нумерологическая справка</h2>
+      <div class="num-grid" id="numGrid"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="sec">Как собран браслет · расчёт</h2>
+      <div id="breakdown"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2 class="sec">История заказов</h2>
+    <div class="hist" id="hist"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var tg = window.Telegram && window.Telegram.WebApp;
+  if(tg){ try{ tg.ready(); tg.expand(); }catch(e){} }
+
+  var LS_KEY = 'braslet_orders_v1';
+  var DATA = null;
+
+  // Таронумерология: буквы кириллицы по порядку алфавита 1..33
+  var ALPHA = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя';
+  var LETTERS = {};
+  for(var _i=0;_i<ALPHA.length;_i++){ LETTERS[ALPHA[_i]] = _i + 1; }
+
+  function hash(s){ var h=0; s=s||''; for(var i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))>>>0; } return h; }
+  function sum(a){ return a.reduce(function(x,y){return x+y;},0); }
+  function digitRoot(n){ while(n>9){ n = sum(String(n).split('').map(Number)); } return n; }
+
+  // Главное правило таронумерологии: если сумма больше 22 — вычитаем 22, пока не станет ≤ 22.
+  function toArcana(total){
+    var cur = total, steps = '' + total;
+    while(cur > 22){ cur -= 22; steps += ' − 22 = ' + cur; }
+    return { value: cur, steps: steps, reduced: cur !== total };
+  }
+
+  // Аркан судьбы — сумма всех цифр даты рождения, приведённая к 1..22
+  function destinyArcana(dateStr){
+    var p = (dateStr || '').split('-');            // ["YYYY","MM","DD"]
+    var digits = (p.join('')).split('').map(Number);
+    var total = sum(digits);
+    var a = toArcana(total);
+    var chain = 'все цифры даты: ' + digits.join(' + ') + ' = ' + total +
+                (a.reduced ? '\n' + a.steps : '');
+    return { value: a.value, chain: chain, total: total };
+  }
+  // Аркан личности — число дня рождения, приведённое к 1..22
+  function personalityArcana(dateStr){
+    var dd = parseInt(((dateStr||'').split('-')[2]) || '0', 10);
+    var a = toArcana(dd);
+    var chain = 'число дня рождения: ' + dd + (a.reduced ? '\n' + a.steps : '');
+    return { value: a.value, chain: chain };
+  }
+  // Аркан имени — сумма букв имени и фамилии (алфавит 1..33), приведённая к 1..22
+  function nameArcana(first,last){
+    var str = (first + last).toLowerCase().replace('ё','е');
+    var parts = [], vals = [];
+    for(var i=0;i<str.length;i++){
+      if(LETTERS[str[i]]){ parts.push(str[i].toUpperCase() + '(' + LETTERS[str[i]] + ')'); vals.push(LETTERS[str[i]]); }
+    }
+    var total = sum(vals);
+    var a = toArcana(total);
+    var chain = parts.join(' + ') + '\n= ' + total + (a.reduced ? '\n' + a.steps : '');
+    return { value: a.value, chain: chain, total: total };
+  }
+  function matchIntention(text){
+    var t = (text||'').toLowerCase();
+    for(var i=0;i<DATA.intentions.length;i++){
+      var it = DATA.intentions[i];
+      for(var k=0;k<it.keywords.length;k++){
+        if(t.indexOf(it.keywords[k])>=0) return { arcana: it.arcana, stones: it.stones.slice(), label: it.label, matched:true };
+      }
+    }
+    var arc = (hash(t.trim()) % 22) + 1;
+    var byArc = DATA.stones.filter(function(s){return s.arcana===arc;}).map(function(s){return s.id;});
+    return { arcana: arc, stones: byArc, label: 'по звучанию запроса', matched:false };
+  }
+
+  function stoneById(id){ return DATA.stones.filter(function(s){return s.id===id;})[0]; }
+
+  function stonesByArcana(a){
+    var r = DATA.stones.filter(function(s){return s.arcana===a;}).map(function(s){return s.id;});
+    if(!r.length) r = DATA.stones.filter(function(s){return s.number===digitRoot(a);}).map(function(s){return s.id;});
+    return r;
+  }
+
+  function pickStones(first,last,dateStr,intentionText){
+    var dest = destinyArcana(dateStr);
+    var pers = personalityArcana(dateStr);
+    var nameA = nameArcana(first,last);
+    var intent = matchIntention(intentionText);
+
+    var groups = [
+      intent.stones,
+      stonesByArcana(intent.arcana),
+      stonesByArcana(dest.value),
+      stonesByArcana(pers.value),
+      stonesByArcana(nameA.value)
+    ];
+    var pool = [];
+    groups.forEach(function(g){ g.forEach(function(id){ if(pool.indexOf(id)<0) pool.push(id); }); });
+    // добираем до минимума детерминированно
+    for(var i=0;i<DATA.stones.length && pool.length<6;i++){
+      if(pool.indexOf(DATA.stones[i].id)<0) pool.push(DATA.stones[i].id);
+    }
+    var target = Math.min(10, Math.max(6, pool.length));
+    if(pool.length>9) target = 9;
+    var chosen = pool.slice(0, target);
+
+    // порядок на браслете: якорь + чередование тёмный/светлый/средний
+    var anchor = intent.stones.length ? intent.stones[0] : chosen[0];
+    var rest = chosen.filter(function(id){return id!==anchor;});
+    var buckets = { dark:[], light:[], mid:[] };
+    rest.forEach(function(id){ buckets[stoneById(id).tone].push(id); });
+    var order = [anchor];
+    var round = ['dark','light','mid'];
+    var moved = true;
+    while(moved){
+      moved = false;
+      round.forEach(function(t){ if(buckets[t].length){ order.push(buckets[t].shift()); moved = true; } });
+    }
+
+    // усиления
+    var ampNotes = {};
+    order.forEach(function(id){
+      DATA.amplify.forEach(function(a){
+        if(a.from===id && order.indexOf(a.to)>=0){
+          var pos = order.indexOf(a.to)+1;
+          (ampNotes[id] = ampNotes[id] || []).push('усиливает №'+pos+' ('+stoneById(a.to).name+') — '+a.note);
+        }
+      });
+    });
+
+    // из какого расчёта пришёл каждый камень (по приоритету источников)
+    var taken = [];
+    function claim(ids){
+      var r = order.filter(function(id){ return ids.indexOf(id)>=0 && taken.indexOf(id)<0; });
+      r.forEach(function(id){ taken.push(id); });
+      return r;
+    }
+    var sources = {
+      intent:      claim(intent.stones),
+      intentArc:   claim(groups[1]),
+      destiny:     claim(groups[2]),
+      personality: claim(groups[3]),
+      nameArc:     claim(groups[4])
+    };
+    sources.extra = order.filter(function(id){ return taken.indexOf(id)<0; });
+
+    return { order: order, amp: ampNotes, dest: dest, pers: pers, nameA: nameA, intent: intent, sources: sources };
+  }
+
+  function renderRing(order){
+    var svg = document.getElementById('ring');
+    var cx=120, cy=120, R=88, n=order.length;
+    var parts = ['<circle cx="120" cy="120" r="88" fill="none" stroke="rgba(63,125,84,.35)" stroke-width="2" stroke-dasharray="3 4"/>'];
+    for(var i=0;i<n;i++){
+      var ang = -Math.PI/2 + i*2*Math.PI/n;
+      var x = cx + R*Math.cos(ang), y = cy + R*Math.sin(ang);
+      var st = stoneById(order[i]);
+      parts.push('<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="15" fill="'+st.color+'" stroke="#fffdfa" stroke-width="2.5"/>');
+      parts.push('<text x="'+x.toFixed(1)+'" y="'+(y+4).toFixed(1)+'" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">'+(i+1)+'</text>');
+    }
+    svg.innerHTML = parts.join('');
+  }
+
+  function renderStones(res){
+    var ol = document.getElementById('stoneList');
+    ol.innerHTML = res.order.map(function(id,i){
+      var st = stoneById(id);
+      var amp = (res.amp[id]||[]).map(function(t){return '<span class="amp">'+t+'</span>';}).join(' ');
+      return '<li class="stone">'+
+        '<div class="bead" style="background:'+st.color+'">'+(i+1)+'</div>'+
+        '<div><div class="nm">'+st.name+'</div>'+
+        '<div class="tag">'+st.meaning+'</div>'+
+        '<div class="ds">'+(st.detail||st.meaning)+'</div>'+amp+'</div></li>';
+    }).join('');
+  }
+
+  function renderNumerology(res){
+    var an = DATA.arcanaNames, am = DATA.arcanaMeanings;
+    var g = document.getElementById('numGrid');
+    var dest = res.dest, pers = res.pers, nameA = res.nameA, intent = res.intent;
+    g.innerHTML =
+      '<div class="num-note">Метод: старшие арканы Таро (1–22). Если сумма больше 22 — вычитаем 22, пока не станет ≤ 22.</div>' +
+      row('Аркан судьбы', dest.value + '. ' + an[dest.value], am[dest.value], dest.chain) +
+      row('Аркан личности', pers.value + '. ' + an[pers.value], am[pers.value], pers.chain) +
+      row('Аркан имени', nameA.value + '. ' + an[nameA.value], am[nameA.value], nameA.chain) +
+      row('Аркан намерения', intent.arcana + '. ' + an[intent.arcana], am[intent.arcana],
+          intent.matched ? 'определён по ключевым словам: «' + intent.label + '»'
+                         : 'определён по смыслу текста намерения');
+    function row(k,v,m,calc){
+      return '<div class="num-row"><div class="k">'+k+'</div><div class="v">'+v+'</div>'+
+        '<div class="m">'+(m||'')+'</div><div class="calc">'+calc+'</div></div>';
+    }
+  }
+
+  function renderBreakdown(res){
+    var s = res.sources, an = DATA.arcanaNames;
+    var blocks = [
+      { ids: s.intent,      h: 'От намерения',           sub: 'аркан ' + res.intent.arcana + '. ' + an[res.intent.arcana] + ' · «' + res.intent.label + '»' },
+      { ids: s.intentArc,   h: 'Дополняют намерение',    sub: 'резонируют с арканом ' + res.intent.arcana + ' ' + an[res.intent.arcana] },
+      { ids: s.destiny,     h: 'От аркана судьбы',       sub: 'аркан ' + res.dest.value + '. ' + an[res.dest.value] + ' — жизненная задача' },
+      { ids: s.personality, h: 'От аркана личности',     sub: 'аркан ' + res.pers.value + '. ' + an[res.pers.value] + ' — как человек проявляется' },
+      { ids: s.nameArc,     h: 'От аркана имени',        sub: 'аркан ' + res.nameA.value + '. ' + an[res.nameA.value] + ' — ресурс имени' },
+      { ids: s.extra,       h: 'Для баланса',            sub: 'добавлены, чтобы браслет был цельным (6–10 камней)' }
+    ];
+    var pos = {};
+    res.order.forEach(function(id,i){ pos[id] = i+1; });
+    document.getElementById('breakdown').innerHTML = blocks.filter(function(b){return b.ids.length;}).map(function(b){
+      var rows = b.ids.map(function(id){
+        var st = stoneById(id);
+        return '<div class="bd-stone"><div class="bd-dot" style="background:'+st.color+'"></div>'+
+          '<div><div class="bn">№'+pos[id]+' · '+st.name+'</div>'+
+          '<div class="bm">'+st.meaning+'</div></div></div>';
+      }).join('');
+      return '<div class="bd-group"><div class="bh">'+b.h+'</div><div class="bsub">'+b.sub+'</div>'+rows+'</div>';
+    }).join('');
+  }
+
+  function renderResults(res){
+    renderRing(res.order);
+    renderStones(res);
+    renderNumerology(res);
+    renderBreakdown(res);
+    document.getElementById('results').style.display = 'flex';
+    try{ document.getElementById('results').scrollIntoView({block:'start'}); }catch(e){}
+  }
+
+  // ---------- история ----------
+  function loadOrders(){
+    try{ var raw = localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); }catch(e){}
+    return null;
+  }
+  function saveOrders(list){ try{ localStorage.setItem(LS_KEY, JSON.stringify(list)); }catch(e){} }
+
+  function renderHistory(){
+    var list = loadOrders() || [];
+    var el = document.getElementById('hist');
+    if(!list.length){ el.innerHTML = '<div class="empty">Пока нет сохранённых расчётов</div>'; return; }
+    el.innerHTML = list.slice().reverse().map(function(o){
+      return '<div class="hrow" data-id="'+o.id+'">'+
+        '<div class="hdot"></div>'+
+        '<div><div class="ht">'+o.firstName+' '+o.lastName+'</div>'+
+        '<div class="hs">'+o.intention+'</div></div>'+
+        '<div class="hd">'+o.createdAt+'</div></div>';
+    }).join('');
+    Array.prototype.forEach.call(el.querySelectorAll('.hrow'), function(r){
+      r.addEventListener('click', function(){
+        var o = list.filter(function(x){return x.id===r.getAttribute('data-id');})[0];
+        if(!o) return;
+        document.getElementById('firstName').value = o.firstName;
+        document.getElementById('lastName').value = o.lastName;
+        document.getElementById('birthDate').value = o.birthDate;
+        document.getElementById('intention').value = o.intention;
+        var res = pickStones(o.firstName,o.lastName,o.birthDate,o.intention);
+        renderResults(res);
+      });
+    });
+  }
+
+  function onGo(){
+    var f = document.getElementById('firstName').value.trim();
+    var l = document.getElementById('lastName').value.trim();
+    var d = document.getElementById('birthDate').value;
+    var it = document.getElementById('intention').value.trim();
+    var errEl = document.getElementById('formErr');
+    if(!f || !l || !d || !it){
+      errEl.textContent = 'Заполни имя, фамилию, дату рождения и намерение';
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+    var res = pickStones(f,l,d,it);
+    renderResults(res);
+    var list = loadOrders() || [];
+    list.push({
+      id: 'o'+Date.now(), firstName:f, lastName:l, birthDate:d, intention:it,
+      createdAt: new Date().toISOString().slice(0,10),
+      stoneIds: res.order
+    });
+    if(list.length>12) list = list.slice(-12);
+    saveOrders(list);
+    renderHistory();
+  }
+
+  function initChips(){
+    var box = document.getElementById('chips');
+    box.innerHTML = DATA.intentions.map(function(it){
+      return '<span class="chip">'+it.label+'</span>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.chip'), function(c){
+      c.addEventListener('click', function(){
+        var ta = document.getElementById('intention');
+        var cur = ta.value.trim();
+        ta.value = cur ? (cur.replace(/[.,\s]*$/,'') + ', ' + c.textContent) : c.textContent;
+        ta.focus();
+      });
+    });
+  }
+
+  function showFallback(){
+    document.getElementById('app').innerHTML =
+      '<section class="card fallback"><b>Не удалось загрузить данные</b>'+
+      '<span>Файл data.json недоступен. Проверь, что он лежит рядом с index.html, и обнови страницу.</span></section>';
+  }
+
+  fetch('data.json?v=' + Date.now())
+    .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
+    .then(function(json){
+      DATA = json;
+      initChips();
+      if(!loadOrders() && json.sampleOrders){
+        saveOrders(json.sampleOrders.map(function(o){ return o; }));
+      }
+      renderHistory();
+      document.getElementById('goBtn').addEventListener('click', onGo);
+    })
+    .catch(function(err){ console.error(err); showFallback(); });
+})();
+</script>
+</body>
+</html>
