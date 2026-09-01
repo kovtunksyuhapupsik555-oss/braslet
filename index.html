@@ -70,7 +70,7 @@
     width:100%;margin-top:16px;font:inherit;font-weight:700;font-size:16px;
     color:#fff;border:none;border-radius:16px;padding:15px;cursor:pointer;
     background:linear-gradient(135deg,var(--terra),var(--accent));
-    box-shadow:0 12px 24px rgba(138,107,196,.3);
+    box-shadow:0 12px 24px rgba(63,125,84,.3);
   }
   button.go:active{transform:translateY(1px)}
 
@@ -154,7 +154,7 @@
     <label class="f">Фамилия</label>
     <input type="text" id="lastName" placeholder="Фонина" autocomplete="off">
     <label class="f">Дата рождения</label>
-    <input type="date" id="birthDate" value="1990-03-17">
+    <input type="date" id="birthDate">
     <label class="f">Намерение</label>
     <textarea id="intention" rows="4" placeholder="Опиши цель заказчика своими словами — можно несколько предложений. Например: хочу чувствовать опору и уверенность на новой работе, защититься от чужого давления."></textarea>
     <div class="hint">Можно писать развёрнуто — несколько предложений. Ключевые слова из текста влияют на подбор аркана и камней.</div>
@@ -227,14 +227,17 @@
   var LETTERS = {};
   for(var _i=0;_i<ALPHA.length;_i++){ LETTERS[ALPHA[_i]] = _i + 1; }
 
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function hash(s){ var h=0; s=s||''; for(var i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))>>>0; } return h; }
   function sum(a){ return a.reduce(function(x,y){return x+y;},0); }
-  function digitRoot(n){ while(n>9){ n = sum(String(n).split('').map(Number)); } return n; }
+  function digitRoot(n){ n = Math.abs(n); while(n>9){ n = sum(String(n).split('').map(function(d){return +d;})); } return n; }
 
   // Главное правило таронумерологии: если сумма больше 22 — вычитаем 22, пока не станет ≤ 22.
   function toArcana(total){
     var cur = total, steps = '' + total;
     while(cur > 22){ cur -= 22; steps += ' − 22 = ' + cur; }
+    if(cur < 1) cur = 22;               // защита от пустых данных
     return { value: cur, steps: steps, reduced: cur !== total };
   }
 
@@ -257,7 +260,7 @@
   }
   // Аркан имени — сумма букв имени и фамилии (алфавит 1..33), приведённая к 1..22
   function nameArcana(first,last){
-    var str = (first + last).toLowerCase().replace('ё','е');
+    var str = (first + last).toLowerCase().replace(/ё/g,'е');
     var parts = [], vals = [];
     for(var i=0;i<str.length;i++){
       if(LETTERS[str[i]]){ parts.push(str[i].toUpperCase() + '(' + LETTERS[str[i]] + ')'); vals.push(LETTERS[str[i]]); }
@@ -372,12 +375,12 @@
     var ol = document.getElementById('stoneList');
     ol.innerHTML = res.order.map(function(id,i){
       var st = stoneById(id);
-      var amp = (res.amp[id]||[]).map(function(t){return '<span class="amp">'+t+'</span>';}).join(' ');
+      var amp = (res.amp[id]||[]).map(function(t){return '<span class="amp">'+esc(t)+'</span>';}).join(' ');
       return '<li class="stone">'+
-        '<div class="bead" style="background:'+st.color+'">'+(i+1)+'</div>'+
-        '<div><div class="nm">'+st.name+'</div>'+
-        '<div class="tag">'+st.meaning+'</div>'+
-        '<div class="ds">'+(st.detail||st.meaning)+'</div>'+amp+'</div></li>';
+        '<div class="bead" style="background:'+esc(st.color)+'">'+(i+1)+'</div>'+
+        '<div><div class="nm">'+esc(st.name)+'</div>'+
+        '<div class="tag">'+esc(st.meaning)+'</div>'+
+        '<div class="ds">'+esc(st.detail||st.meaning)+'</div>'+amp+'</div></li>';
     }).join('');
   }
 
@@ -394,8 +397,8 @@
           intent.matched ? 'определён по ключевым словам: «' + intent.label + '»'
                          : 'определён по смыслу текста намерения');
     function row(k,v,m,calc){
-      return '<div class="num-row"><div class="k">'+k+'</div><div class="v">'+v+'</div>'+
-        '<div class="m">'+(m||'')+'</div><div class="calc">'+calc+'</div></div>';
+      return '<div class="num-row"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v)+'</div>'+
+        '<div class="m">'+esc(m||'')+'</div><div class="calc">'+esc(calc)+'</div></div>';
     }
   }
 
@@ -414,11 +417,11 @@
     document.getElementById('breakdown').innerHTML = blocks.filter(function(b){return b.ids.length;}).map(function(b){
       var rows = b.ids.map(function(id){
         var st = stoneById(id);
-        return '<div class="bd-stone"><div class="bd-dot" style="background:'+st.color+'"></div>'+
-          '<div><div class="bn">№'+pos[id]+' · '+st.name+'</div>'+
-          '<div class="bm">'+st.meaning+'</div></div></div>';
+        return '<div class="bd-stone"><div class="bd-dot" style="background:'+esc(st.color)+'"></div>'+
+          '<div><div class="bn">№'+pos[id]+' · '+esc(st.name)+'</div>'+
+          '<div class="bm">'+esc(st.meaning)+'</div></div></div>';
       }).join('');
-      return '<div class="bd-group"><div class="bh">'+b.h+'</div><div class="bsub">'+b.sub+'</div>'+rows+'</div>';
+      return '<div class="bd-group"><div class="bh">'+esc(b.h)+'</div><div class="bsub">'+esc(b.sub)+'</div>'+rows+'</div>';
     }).join('');
   }
 
@@ -443,11 +446,11 @@
     var el = document.getElementById('hist');
     if(!list.length){ el.innerHTML = '<div class="empty">Пока нет сохранённых расчётов</div>'; return; }
     el.innerHTML = list.slice().reverse().map(function(o){
-      return '<div class="hrow" data-id="'+o.id+'">'+
+      return '<div class="hrow" data-id="'+esc(o.id)+'">'+
         '<div class="hdot"></div>'+
-        '<div><div class="ht">'+o.firstName+' '+o.lastName+'</div>'+
-        '<div class="hs">'+o.intention+'</div></div>'+
-        '<div class="hd">'+o.createdAt+'</div></div>';
+        '<div><div class="ht">'+esc(o.firstName)+' '+esc(o.lastName)+'</div>'+
+        '<div class="hs">'+esc(o.intention)+'</div></div>'+
+        '<div class="hd">'+esc(o.createdAt)+'</div></div>';
     }).join('');
     Array.prototype.forEach.call(el.querySelectorAll('.hrow'), function(r){
       r.addEventListener('click', function(){
@@ -491,7 +494,7 @@
   function initChips(){
     var box = document.getElementById('chips');
     box.innerHTML = DATA.intentions.map(function(it){
-      return '<span class="chip">'+it.label+'</span>';
+      return '<span class="chip">'+esc(it.label)+'</span>';
     }).join('');
     Array.prototype.forEach.call(box.querySelectorAll('.chip'), function(c){
       c.addEventListener('click', function(){
@@ -515,7 +518,7 @@
       DATA = json;
       initChips();
       if(!loadOrders() && json.sampleOrders){
-        saveOrders(json.sampleOrders.map(function(o){ return o; }));
+        saveOrders(json.sampleOrders);
       }
       renderHistory();
       document.getElementById('goBtn').addEventListener('click', onGo);
