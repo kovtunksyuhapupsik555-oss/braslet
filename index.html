@@ -114,6 +114,13 @@
   .rb-theme.core{background:var(--terra);color:#fff;border-color:var(--terra)}
   .rb-note{font-size:11.5px;color:var(--ink-soft);margin-top:8px;line-height:1.5}
   .stone .ans{font-size:11.5px;color:var(--terra);margin-top:5px;font-weight:600}
+  .stone .also{font-size:12px;color:var(--ink-soft);margin-top:6px;line-height:1.5}
+  .stone .also b{color:var(--ink)}
+  .stone .combos{font-size:12px;color:var(--ink-soft);margin-top:6px;line-height:1.5}
+  .stone .combos b{color:var(--ink)}
+  .stone .combos ul{list-style:none;margin-top:3px}
+  .stone .combos li{padding:2px 0 2px 12px;position:relative}
+  .stone .combos li:before{content:"+";position:absolute;left:0;color:var(--accent);font-weight:700}
 
   .bd-group{background:var(--card-solid);border:1px solid var(--line);
     border-radius:14px;padding:12px 13px;margin-bottom:10px}
@@ -167,12 +174,11 @@
     <label class="f">Дата рождения</label>
     <input type="date" id="birthDate">
     <label class="f">Ситуация и задача — что происходит у заказчика</label>
-    <textarea id="situation" rows="4" placeholder="Опиши своими словами, что сейчас в жизни заказчика и что его беспокоит. Например: вышла на новую работу, руководитель давит, боюсь возражать, дома из-за этого напряжение."></textarea>
-    <div class="hint">Чем конкретнее ситуация — тем точнее подбор. Пиши несколько предложений.</div>
+    <textarea id="situation" rows="5" placeholder="Опиши подробно, своими словами: что сейчас в жизни заказчика, что беспокоит, из-за чего он пришёл. Несколько предложений, без телеграфного стиля. Например: вышла на новую работу руководителем, подчинённые старше и продавливают решения, боюсь возражать; из-за стресса плохо сплю, дома срываюсь на близких."></textarea>
+    <div class="hint">Пиши развёрнуто — минимум 2–3 полных предложения. Чем подробнее, тем точнее подбор камней.</div>
     <label class="f">Желание — какого результата и состояния хочет заказчик</label>
-    <textarea id="desire" rows="3" placeholder="Например: хочу спокойную уверенность в себе, уметь спокойно отстаивать позицию и вернуть тепло дома."></textarea>
-    <div class="hint">Можно нажать на подсказки ниже — они добавятся в поле «Желание».</div>
-    <div class="chips" id="chips"></div>
+    <textarea id="desire" rows="4" placeholder="Тоже развёрнуто, своими словами. Например: хочет спокойную уверенность в новой роли, уметь мягко отстаивать позицию на переговорах, вернуть тепло и спокойствие дома."></textarea>
+    <div class="hint">Опиши желаемый результат и состояние полными фразами, а не парой слов.</div>
     <div id="formErr" style="display:none;margin-top:12px;font-size:12.5px;color:#b4472f;background:#fbe4dc;border:1px solid var(--line);border-radius:12px;padding:10px 13px"></div>
     <button class="go" id="goBtn">Подобрать камни</button>
   </section>
@@ -458,11 +464,18 @@
       var amp = (res.amp[id]||[]).map(function(t){return '<span class="amp">'+esc(t)+'</span>';}).join(' ');
       var ans = (res.why[id]||[]).length
         ? '<div class="ans">отвечает на: '+esc(res.why[id].join(' · '))+'</div>' : '';
+      var also = (st.also && st.also.length)
+        ? '<div class="also"><b>Ещё значения:</b> '+esc(st.also.join(' · '))+'</div>' : '';
+      var combos = (st.combos && st.combos.length)
+        ? '<div class="combos"><b>Сочетать с:</b><ul>'+
+          st.combos.map(function(c){
+            return '<li>'+esc(c.with)+' — '+esc(c.effect)+'</li>';
+          }).join('')+'</ul></div>' : '';
       return '<li class="stone">'+
         '<div class="bead" style="background:'+esc(st.color)+'">'+(i+1)+'</div>'+
         '<div><div class="nm">'+esc(st.name)+'</div>'+
         '<div class="tag">'+esc(st.meaning)+'</div>'+
-        '<div class="ds">'+esc(st.detail||st.meaning)+'</div>'+ans+amp+'</div></li>';
+        '<div class="ds">'+esc(st.detail||st.meaning)+'</div>'+ans+also+combos+amp+'</div></li>';
     }).join('');
   }
 
@@ -588,10 +601,16 @@
     var sit = document.getElementById('situation').value.trim();
     var des = document.getElementById('desire').value.trim();
     var errEl = document.getElementById('formErr');
+    function fail(msg){ errEl.textContent = msg; errEl.style.display = 'block'; }
     if(!f || !l || !d || !sit){
-      errEl.textContent = 'Заполни имя, фамилию, дату рождения и поле «Ситуация и задача»';
-      errEl.style.display = 'block';
-      return;
+      fail('Заполни имя, фамилию, дату рождения и поле «Ситуация и задача»'); return;
+    }
+    var sitWords = sit.split(/\s+/).filter(Boolean).length;
+    if(sit.length < 40 || sitWords < 8){
+      fail('Опиши ситуацию развёрнуто — минимум 2–3 полных предложения. Короткой пары слов мало для точного подбора.'); return;
+    }
+    if(des && des.split(/\s+/).filter(Boolean).length < 4){
+      fail('Желание тоже опиши полной фразой, а не парой слов — или оставь поле пустым.'); return;
     }
     errEl.style.display = 'none';
     var res = pickStones(f,l,d,sit,des);
@@ -609,22 +628,6 @@
     renderHistory();
   }
 
-  function initChips(){
-    var box = document.getElementById('chips');
-    box.innerHTML = (DATA.themes||[]).map(function(th){
-      return '<span class="chip" data-wish="'+esc(th.wish)+'">'+esc(th.label)+'</span>';
-    }).join('');
-    Array.prototype.forEach.call(box.querySelectorAll('.chip'), function(c){
-      c.addEventListener('click', function(){
-        var ta = document.getElementById('desire');
-        var add = c.getAttribute('data-wish') || c.textContent;
-        var cur = ta.value.trim();
-        ta.value = cur ? (cur.replace(/[.,\s]*$/,'') + '; ' + add) : (add.charAt(0).toUpperCase() + add.slice(1));
-        ta.focus();
-      });
-    });
-  }
-
   function showFallback(){
     document.getElementById('app').innerHTML =
       '<section class="card fallback"><b>Не удалось загрузить данные</b>'+
@@ -635,7 +638,6 @@
     .then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
     .then(function(json){
       DATA = json;
-      initChips();
       if(!loadOrders() && json.sampleOrders){
         saveOrders(json.sampleOrders);
       }
